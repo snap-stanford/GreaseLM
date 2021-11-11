@@ -26,6 +26,7 @@ from utils import utils
 DECODER_DEFAULT_LR = {
     'csqa': 1e-3,
     'obqa': 3e-4,
+    'medqa_usmle': 1e-3,
 }
 
 import numpy as np
@@ -81,8 +82,11 @@ def construct_model(args, kg):
     ##########################################################
 
     if kg == "cpnet":
-        n_ntype = 4 
+        n_ntype = 4
         n_etype = 38
+    elif kg == "ddb":
+        n_ntype = 4
+        n_etype = 34
     else:
         raise ValueError("Invalid KG.")
     if args.cxt_node_connects_all:
@@ -178,7 +182,7 @@ def calc_eval_accuracy(eval_set, model, loss_type, loss_func, debug, save_test_p
 
 def train(args, resume, has_test_split, devices, kg):
     print("args: {}".format(args))
-    
+
     if resume:
         args.save_dir = os.path.dirname(args.resume_checkpoint)
     if not args.debug:
@@ -211,7 +215,14 @@ def train(args, resume, has_test_split, devices, kg):
 
     # Get the names of the loaded LM parameters
     loading_info = model.lmgnn.loading_info
-    loaded_roberta_keys = [k.replace("roberta.", "lmgnn.mp.") for k in loading_info["all_keys"]]
+    # loaded_roberta_keys = [k.replace("roberta.", "lmgnn.mp.") for k in loading_info["all_keys"]]
+    def _rename_key(key):
+        if key.startswith("roberta."):
+            return key.replace("roberta.", "lmgnn.mp.")
+        else:
+            return "lmgnn.mp." + key
+
+    loaded_roberta_keys = [_rename_key(k) for k in loading_info["all_keys"]]
 
     # Separate the parameters into loaded and not loaded
     loaded_params, not_loaded_params, params_to_freeze, small_lr_params, large_lr_params = sep_params(model, loaded_roberta_keys)
@@ -316,7 +327,7 @@ def train(args, resume, has_test_split, devices, kg):
         model.train()
 
         for qids, labels, *input_data in tqdm(train_dataloader, desc="Batch"):
-            # labels: [bs] 
+            # labels: [bs]
             start_time = time.time()
             optimizer.zero_grad()
             bs = labels.size(0)
@@ -387,11 +398,11 @@ def train(args, resume, has_test_split, devices, kg):
         if not args.debug:
             with open(log_path, 'a') as fout:
                 fout.write('{:3},{:5},{:7.4f},{:7.4f},{:7.4f},{:7.4f},{:3}\n'.format(epoch_id, global_step, dev_acc, test_acc, best_dev_acc, final_test_acc, best_dev_epoch))
-        
+
         wandb.log({"dev_acc": dev_acc, "dev_loss": dev_total_loss, "best_dev_acc": best_dev_acc, "best_dev_epoch": best_dev_epoch}, step=global_step)
         if has_test_split:
             wandb.log({"test_acc": test_acc, "test_loss": test_total_loss, "final_test_acc": final_test_acc}, step=global_step)
-        
+
         # Save the model checkpoint
         if args.save_model:
             model_state_dict = model.state_dict()
@@ -500,10 +511,12 @@ def main(args):
     logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(name)s:%(funcName)s():%(lineno)d] %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S',
                         level=logging.WARNING)
-    
+
     has_test_split = True
     devices = get_devices(args.cuda)
     kg = "cpnet"
+    if args.dataset == "medqa_usmle":
+        kg = "ddb"
 
     if not args.use_wandb:
         wandb_mode = "disabled"
@@ -518,7 +531,7 @@ def main(args):
     args.wandb_id = wandb_id
 
     args.hf_version = transformers.__version__
-                        
+
     with wandb.init(project="KG-LM", config=args, name=args.run_name, resume="allow", id=wandb_id, settings=wandb.Settings(start_method="fork"), mode=wandb_mode):
         print(socket.gethostname())
         print ("pid:", os.getpid())
@@ -537,7 +550,7 @@ def main(args):
 
 if __name__ == '__main__':
     __spec__ = None
-    
+
     parser = parser_utils.get_parser()
     args, _ = parser.parse_known_args()
 

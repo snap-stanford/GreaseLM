@@ -23,6 +23,14 @@ from utils import utils
 logger = logging.getLogger(__name__)
 
 
+if os.environ.get('INHERIT_BERT', 0):
+    ModelClass = modeling_bert.BertModel
+else:
+    ModelClass = modeling_roberta.RobertaModel
+    
+print ('ModelClass', ModelClass)
+
+
 class GreaseLM(nn.Module):
 
     def __init__(self, args={}, model_name="roberta-large", k=5, n_ntype=4, n_etype=38,
@@ -31,11 +39,11 @@ class GreaseLM(nn.Module):
                  pretrained_concept_emb=None, freeze_ent_emb=True,
                  init_range=0.02, ie_dim=200, info_exchange=True, ie_layer_num=1, sep_ie_layers=False, layer_id=-1):
         super().__init__()
-        self.lmgnn = LMGNN(args, model_name, k, n_ntype, n_etype, 
+        self.lmgnn = LMGNN(args, model_name, k, n_ntype, n_etype,
                                         n_concept, concept_dim, concept_in_dim, n_attention_head,
                                         fc_dim, n_fc_layer, p_emb, p_gnn, p_fc, pretrained_concept_emb=pretrained_concept_emb, freeze_ent_emb=freeze_ent_emb,
                                         init_range=init_range, ie_dim=ie_dim, info_exchange=info_exchange, ie_layer_num=ie_layer_num,  sep_ie_layers=sep_ie_layers, layer_id=layer_id)
-    
+
     def batch_graph(self, edge_index_init, edge_type_init, n_nodes):
         """
         edge_index_init: list of (n_examples, ). each entry is torch.tensor(2, E)
@@ -59,7 +67,7 @@ class GreaseLM(nn.Module):
                                                          -> (2, total E)
             edge_type:  list of (batch_size, num_choice) -> list of (batch_size * num_choice, ); each entry is torch.tensor(E(variable), )
                                                          -> (total E, )
-        
+
         returns:
         logits: [bs, nc]
         """
@@ -85,7 +93,7 @@ class GreaseLM(nn.Module):
             return logits, attn, concept_ids.view(bs, nc, -1), node_type_ids.view(bs, nc, -1), edge_index_orig, edge_type_orig
             # edge_index_orig: list of (batch_size, num_choice). each entry is torch.tensor(2, E)
             # edge_type_orig: list of (batch_size, num_choice). each entry is torch.tensor(E, )
-            
+
     def get_fake_inputs(self, device="cuda:0"):
         bs = 4
         nc = 5
@@ -129,14 +137,14 @@ def test_GreaseLM(device):
 
 class LMGNN(nn.Module):
 
-    def __init__(self, args={}, model_name="roberta-large", k=5, n_ntype=4, n_etype=38, 
+    def __init__(self, args={}, model_name="roberta-large", k=5, n_ntype=4, n_etype=38,
                  n_concept=799273, concept_dim=200, concept_in_dim=1024, n_attention_head=2,
                  fc_dim=200, n_fc_layer=0, p_emb=0.2, p_gnn=0.2, p_fc=0.2,
                  pretrained_concept_emb=None, freeze_ent_emb=True,
                  init_range=0.02, ie_dim=200, info_exchange=True, ie_layer_num=1, sep_ie_layers=False, layer_id=-1):
         super().__init__()
-        config, _ = modeling_roberta.RobertaModel.config_class.from_pretrained(
-            model_name, 
+        config, _ = ModelClass.config_class.from_pretrained(
+            model_name,
             cache_dir=None, return_unused_kwargs=True,
             force_download=False,
             output_hidden_states=True
@@ -281,11 +289,12 @@ def test_LMGNN(device):
     model.check_outputs(*outputs)
 
 
-class TextKGMessagePassing(modeling_roberta.RobertaModel):
+
+class TextKGMessagePassing(ModelClass):
 
     def __init__(self, config, args={}, k=5, n_ntype=4, n_etype=38, dropout=0.2, concept_dim=200, ie_dim=200, p_fc=0.2, info_exchange=True, ie_layer_num=1, sep_ie_layers=False):
         super().__init__(config=config)
-       
+
         self.n_ntype = n_ntype
         self.n_etype = n_etype
 
@@ -633,7 +642,7 @@ class TextKGMessagePassing(modeling_roberta.RobertaModel):
             state_dict = state_dict.copy()
             if metadata is not None:
                 state_dict._metadata = metadata
-            
+
             all_keys = list(state_dict.keys())
 
             # PyTorch's `_load_from_state_dict` does not copy parameters in a module's descendants
@@ -756,7 +765,7 @@ class RoBERTaGAT(modeling_bert.BertEncoder):
 
     def __init__(self, config, k=5, n_ntype=4, n_etype=38, hidden_size=200, dropout=0.2, concept_dim=200, ie_dim=200, p_fc=0.2, info_exchange=True, ie_layer_num=1, sep_ie_layers=False):
         super().__init__(config)
-        
+
         self.k = k
         self.edge_encoder = torch.nn.Sequential(torch.nn.Linear(n_etype + 1 + n_ntype * 2, hidden_size), torch.nn.BatchNorm1d(hidden_size), torch.nn.ReLU(), torch.nn.Linear(hidden_size, hidden_size))
         self.gnn_layers = nn.ModuleList([modeling_gnn.GATConvE(hidden_size, n_ntype, n_etype, self.edge_encoder) for _ in range(k)])
@@ -799,14 +808,14 @@ class RoBERTaGAT(modeling_bert.BertEncoder):
 
             if output_attentions:
                 all_attentions = all_attentions + (layer_outputs[1],)
-            
+
             if i >= self.num_hidden_layers - self.k:
                 # GNN
                 gnn_layer_index = i - self.num_hidden_layers + self.k
                 _X = self.gnn_layers[gnn_layer_index](_X, edge_index, edge_type, _node_type, _node_feature_extra)
                 _X = self.activation(_X)
                 _X = F.dropout(_X, self.dropout_rate, training = self.training)
-            
+
                 # Exchange info between LM and GNN hidden states (Modality interaction)
                 if self.info_exchange == True or (self.info_exchange == "every-other-layer" and (i - self.num_hidden_layers + self.k) % 2 == 0):
                     X = _X.view(bs, -1, _X.size(1)) # [bs, max_num_nodes, node_dim]
@@ -861,7 +870,7 @@ class RoBERTaGAT(modeling_bert.BertEncoder):
 
 def test_RoBERTaGAT(device):
     config, _ = modeling_roberta.RobertaModel.config_class.from_pretrained(
-        "roberta-large", 
+        "roberta-large",
         cache_dir=None, return_unused_kwargs=True,
         force_download=False,
         output_hidden_states=True
@@ -880,7 +889,7 @@ if __name__ == "__main__":
     utils.print_cuda_info()
     free_gpus = utils.select_free_gpus()
     device = torch.device("cuda:{}".format(free_gpus[0]))
-    
+
     # test_RoBERTaGAT(device)
 
     # test_TextKGMessagePassing(device)
