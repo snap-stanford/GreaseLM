@@ -32,12 +32,16 @@ except:
 
 MODEL_NAME_TO_CLASS = {model_name: model_class for model_class, model_name_list in MODEL_CLASS_TO_NAME.items() for model_name in model_name_list}
 
+#Add SapBERT configuration
+model_name = 'cambridgeltl/SapBERT-from-PubMedBERT-fulltext'
+MODEL_NAME_TO_CLASS[model_name] = 'bert'
+
 GPT_SPECIAL_TOKENS = ['_start_', '_delimiter_', '_classify_']
 
 
 class MultiGPUSparseAdjDataBatchGenerator(object):
     """A data generator that batches the data and moves them to the corresponding devices."""
-    def __init__(self, device0, device1, batch_size, indexes, qids, labels, 
+    def __init__(self, device0, device1, batch_size, indexes, qids, labels,
                  tensors0=[], lists0=[], tensors1=[], lists1=[], adj_data=None):
         self.device0 = device0
         self.device1 = device1
@@ -220,6 +224,28 @@ class GreaseLM_DataLoader(object):
                 self.id2concept = [w.strip() for w in fin]
             self.concept2id = {w: i for i, w in enumerate(self.id2concept)}
             self.id2relation = conceptnet.merged_relations
+        elif kg == "ddb":
+            cpnet_vocab_path = "data/ddb/vocab.txt"
+            with open(cpnet_vocab_path, "r", encoding="utf8") as fin:
+                self.id2concept = [w.strip() for w in fin]
+            self.concept2id = {w: i for i, w in enumerate(self.id2concept)}
+            self.id2relation = [
+                'belongstothecategoryof',
+                'isacategory',
+                'maycause',
+                'isasubtypeof',
+                'isariskfactorof',
+                'isassociatedwith',
+                'maycontraindicate',
+                'interactswith',
+                'belongstothedrugfamilyof',
+                'child-parent',
+                'isavectorfor',
+                'mabeallelicwith',
+                'seealso',
+                'isaningradientof',
+                'mabeindicatedby'
+            ]
         else:
             raise ValueError("Invalid value for kg.")
 
@@ -406,7 +432,7 @@ class GreaseLM_DataLoader(object):
         #node_scores: (n_questions, num_choice, max_node_num)
         #adj_lengths: (n_questions,　num_choice)
         return concept_ids, node_type_ids, node_scores, adj_lengths, special_nodes_mask, (edge_index, edge_type) #, half_n_rel * 2 + 1
-    
+
 
 def load_gpt_input_tensors(statement_jsonl_path, max_seq_length):
     def _truncate_seq_pair(tokens_a, tokens_b, max_length):
@@ -526,7 +552,7 @@ def load_bert_xlnet_roberta_input_tensors(statement_jsonl_path, max_seq_length, 
                         label=label
                     ))
         return examples
-    
+
     def simple_convert_examples_to_features(examples, label_list, max_seq_length, tokenizer):
         """ Loads a data file into a list of `InputBatch`s
             `cls_token_at_end` define the location of the CLS token:

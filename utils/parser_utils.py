@@ -18,13 +18,17 @@ ENCODER_DEFAULT_LR = {
         'bert-large-cased': 1e-4,
         'roberta-large': 1e-5,
     },
+    'medqa_usmle': {
+        'cambridgeltl/SapBERT-from-PubMedBERT-fulltext': 5e-5,
+    },
 }
 
-DATASET_LIST = ['csqa', 'obqa']
+DATASET_LIST = ['csqa', 'obqa', 'medqa_usmle']
 
 DATASET_SETTING = {
     'csqa': 'inhouse',
     'obqa': 'official',
+    'medqa_usmle': 'official',
 }
 
 DATASET_NO_TEST = []
@@ -33,12 +37,13 @@ EMB_PATHS = {
     'transe': 'data/cpnet/glove.transe.sgd.ent.npy',
     'numberbatch': 'data/cpnet/concept.nb.npy',
     'tzw': 'data/cpnet/tzw.ent.npy',
+    'ddb': 'data/ddb/ent_emb.npy',
 }
 
 
 def add_data_arguments(parser):
     # arguments that all datasets share
-    parser.add_argument('--ent_emb', default=['tzw'], choices=['tzw', "transe", "numberbatch"], nargs='+', help='sources for entity embeddings')
+    parser.add_argument('--ent_emb', default=['tzw'], nargs='+', help='sources for entity embeddings')
     # dataset specific
     parser.add_argument('-ds', '--dataset', default='csqa', choices=DATASET_LIST, help='dataset name')
     parser.add_argument('--data_dir', default='data', type=str, help='Path to the data directory')
