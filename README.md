@@ -102,7 +102,7 @@ You can download a pretrained GreaseLM model on CommonsenseQA [here](https://dri
 
 You can also download a pretrained GreaseLM model on OpenbookQA [here](https://drive.google.com/file/d/1-QqyiQuU9xlN20vwfIaqYQ_uJMP8d7Pv/view?usp=sharing), which achieves an test acc. of `84.8`.
 
-You can also download a pretrained GreaseLM model on MedQA-USMLE [here](https://drive.google.com/file/d/1x5nZEprV0Ht8IWViyz3d07uGLXtNjUN1/view?usp=sharing), which achieves an test acc. of `38.5`.
+You can also download a pretrained GreaseLM model on MedQA-USMLE [here](https://drive.google.com/file/d/1j0QxiBiGbv0s9PhseSly6V6uiHWU5IEt/view?usp=sharing), which achieves an test acc. of `38.5`.
 
 ## 5. Evaluating a pretrained model checkpoint
 To evaluate a pretrained GreaseLM model checkpoint on CommonsenseQA, run
@@ -111,9 +111,13 @@ CUDA_VISIBLE_DEVICES=0 ./eval_greaselm.sh csqa --data_dir data/ --load_model_pat
 ```
 Again you can specify up to 2 GPUs you want to use in the beginning of the command `CUDA_VISIBLE_DEVICES=...`.
 
-SimilarlyTo evaluate a pretrained GreaseLM model checkpoint on OpenbookQA, run
+Similarly, to evaluate a pretrained GreaseLM model checkpoint on OpenbookQA, run
 ```
 CUDA_VISIBLE_DEVICES=0 ./eval_greaselm.sh obqa --data_dir data/ --load_model_path /path/to/checkpoint
+```
+To evaluate a pretrained GreaseLM model checkpoint on MedQA-USMLE, run
+```
+INHERIT_BERT=1 CUDA_VISIBLE_DEVICES=0 ./eval_greaselm.sh medqa_usmle --data_dir data/ --load_model_path /path/to/checkpoint
 ```
 
 ## 6. Use your own dataset
