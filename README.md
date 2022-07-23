@@ -1,6 +1,14 @@
 # GreaseLM: Graph REASoning Enhanced Language Models for Question Answering
 
-This repo provides the source code & data of our paper [GreaseLM: Graph REASoning Enhanced Language Models for Question Answering](https://arxiv.org/abs/2201.08860) (ICLR 2022 spotlight).
+This repo provides the source code & data of our paper [GreaseLM: Graph REASoning Enhanced Language Models for Question Answering](https://arxiv.org/abs/2201.08860) (ICLR 2022 spotlight). If you use any of our code, processed data or pretrained models, please cite:
+```bib
+@inproceedings{zhang2021greaselm,
+  title={GreaseLM: Graph REASoning Enhanced Language Models},
+  author={Zhang, Xikun and Bosselut, Antoine and Yasunaga, Michihiro and Ren, Hongyu and Liang, Percy and Manning, Christopher D and Leskovec, Jure},
+  booktitle={International Conference on Learning Representations},
+  year={2021}
+}
+```
 
 <p align="center">
   <img src="./figs/greaselm.png" width="600" title="GreaseLM model architecture" alt="">
