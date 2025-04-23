@@ -44,27 +44,27 @@ pip install torch-geometric==1.7.0 -f https://pytorch-geometric.com/whl/torch-1.
 ## 2. Download data
 
 ### Download and preprocess data yourself
-**Preprocessing the data yourself may take long, so if you want to directly download preprocessed data, please jump to the next subsection.**
+**Preprocessing the data yourself may take a long time, so if you want to directly download preprocessed data, please jump to the next subsection.**
 
-Download the raw ConceptNet, CommonsenseQA, OpenBookQA data by using
+Download the raw ConceptNet, CommonsenseQA, and OpenBookQA data by using
 ```
 ./download_raw_data.sh
 ```
 
-You can preprocess these raw data by running
+You can preprocess the raw data by running
 ```
 CUDA_VISIBLE_DEVICES=0 python preprocess.py -p <num_processes>
 ```
-You can specify the GPU you want to use in the beginning of the command `CUDA_VISIBLE_DEVICES=...`. The script will:
+You can specify the GPU you want to use at the beginning of the command `CUDA_VISIBLE_DEVICES=...`. The script will:
 * Setup ConceptNet (e.g., extract English relations from ConceptNet, merge the original 42 relation types into 17 types)
 * Convert the QA datasets into .jsonl files (e.g., stored in `data/csqa/statement/`)
-* Identify all mentioned concepts in the questions and answers
+* Identify all the mentioned concepts in the questions and answers
 * Extract subgraphs for each q-a pair
 
 The script to download and preprocess the [MedQA-USMLE](https://github.com/jind11/MedQA) data and the biomedical knowledge graph based on Disease Database and DrugBank is provided in `utils_biomed/`.
 
 ### Directly download preprocessed data
-For your convenience, if you don't want to preprocess the data yourself, you can download all the preprocessed data [here](https://drive.google.com/drive/folders/1T6B4nou5P3u-6jr0z6e3IkitO8fNVM6f?usp=sharing). Download them into the top-level directory of this repo and unzip them. Move the `medqa_usmle` and `ddb` folders into the `data/` directory.
+For your convenience, if you don't want to preprocess the data yourself, you can download all the preprocessed data [here](https://drive.google.com/drive/folders/16hEDRfkIaHyldyeUGqKG614fQByNhOPg?usp=sharing). Download them into the top-level directory of this repo and unzip them. Move the `medqa_usmle` and `ddb` folders into the `data/` directory.
 
 ### Resulting file structure
 
@@ -74,7 +74,7 @@ The resulting file structure should look like this:
 .
 ├── README.md
 ├── data/
-    ├── cpnet/                 (prerocessed ConceptNet)
+    ├── cpnet/                 (preprocessed ConceptNet)
     ├── csqa/
         ├── train_rand_split.jsonl
         ├── dev_rand_split.jsonl
@@ -93,7 +93,7 @@ To train GreaseLM on CommonsenseQA, run
 ```
 CUDA_VISIBLE_DEVICES=0 ./run_greaselm.sh csqa --data_dir data/
 ```
-You can specify up to 2 GPUs you want to use in the beginning of the command `CUDA_VISIBLE_DEVICES=...`.
+You can specify up to 2 GPUs you want to use at the beginning of the command `CUDA_VISIBLE_DEVICES=...`.
 
 Similarly, to train GreaseLM on OpenbookQA, run
 ```
@@ -106,18 +106,18 @@ CUDA_VISIBLE_DEVICES=0 ./run_greaselm__medqa_usmle.sh
 ```
 
 ## 4. Pretrained model checkpoints
-You can download a pretrained GreaseLM model on CommonsenseQA [here](https://drive.google.com/file/d/1QPwLZFA6AQ-pFfDR6TWLdBAvm3c_HOUr/view?usp=sharing), which achieves an IH-dev acc. of `79.0` and an IH-test acc. of `74.0`.
+You can download a pretrained GreaseLM model on CommonsenseQA [here](https://drive.google.com/file/d/1iu-d7Q23tUD_MYcYu9jmJintqtD9LPv_/view?usp=sharing), which achieves an IH-dev acc. of `79.0` and an IH-test acc. of `74.0`.
 
-You can also download a pretrained GreaseLM model on OpenbookQA [here](https://drive.google.com/file/d/1-QqyiQuU9xlN20vwfIaqYQ_uJMP8d7Pv/view?usp=sharing), which achieves an test acc. of `84.8`.
+You can also download a pretrained GreaseLM model on OpenbookQA [here](https://drive.google.com/file/d/1mE6hUK2CIAz6wrFucxDaXU913pwdawdv/view?usp=sharing), which achieves a test acc. of `84.8`.
 
-You can also download a pretrained GreaseLM model on MedQA-USMLE [here](https://drive.google.com/file/d/1j0QxiBiGbv0s9PhseSly6V6uiHWU5IEt/view?usp=sharing), which achieves an test acc. of `38.5`.
+You can also download a pretrained GreaseLM model on MedQA-USMLE [here](https://drive.google.com/file/d/1-P3hngsRfnflHAay6JnkNke069gYwdVb/view?usp=sharing), which achieves a test acc. of `38.5`.
 
 ## 5. Evaluating a pretrained model checkpoint
 To evaluate a pretrained GreaseLM model checkpoint on CommonsenseQA, run
 ```
 CUDA_VISIBLE_DEVICES=0 ./eval_greaselm.sh csqa --data_dir data/ --load_model_path /path/to/checkpoint
 ```
-Again you can specify up to 2 GPUs you want to use in the beginning of the command `CUDA_VISIBLE_DEVICES=...`.
+Again, you can specify up to 2 GPUs you want to use in the beginning of the command `CUDA_VISIBLE_DEVICES=...`.
 
 Similarly, to evaluate a pretrained GreaseLM model checkpoint on OpenbookQA, run
 ```
